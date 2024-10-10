@@ -1,0 +1,48 @@
+#First, update the aws_launch_configuration resource to include the user data script for installing and configuring Vault:
+
+
+resource "aws_launch_configuration" "example" {
+  name          = "example"
+  image_id      = "ami-0c55b159cbfafe1f0" # Use the latest Amazon Linux 2 AMI ID
+  instance_type = "t2.micro"
+
+  security_groups = [
+    aws_security_group.public_sg.id,
+  ]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              # Install Vault
+              sudo yum update -y
+              sudo yum install -y yum-utils
+              sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+              sudo yum -y install vault
+
+              # Enable and start Vault service
+              sudo systemctl enable vault
+              sudo systemctl start vault
+
+              # Configure Vault
+              sudo mkdir -p /etc/vault.d
+              sudo tee /etc/vault.d/vault.hcl <<-CONFIG
+              listener "tcp" {
+                address     = "0.0.0.0:8200"
+                tls_disable = 1
+              }
+              storage "file" {
+                path = "/mnt/vault/data"
+              }
+              ui = true
+              CONFIG
+
+              # Restart Vault with new configuration
+              sudo systemctl restart vault
+              EOF
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+
+#This script will update the instance, install Vault, enable and start the Vault service, and configure Vault to listen on all IP addresses on port 8200 with the UI enabled.

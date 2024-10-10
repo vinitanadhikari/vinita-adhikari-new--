@@ -1,0 +1,8 @@
+#variables.tf: 
+
+#Define any variables you might want to use later.
+
+variable "region" {
+  description = "The AWS region to deploy to"
+  default     = "us-west-2"
+}
